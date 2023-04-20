@@ -1,4 +1,4 @@
-User guide of EVASIONS code 
+User guide of EVASIONS code
 
 Author: C. Fougères (2023)
 Contact: cfougeres@anl.gov
@@ -7,7 +7,6 @@ References
  - *Understanding the cosmic abundance of 22Na: lifetime measurements in 23Mg* (C. Fougères, Thesis, Normandie University, https://hal.science/tel-03768524v1)
 	--> chapter 4
  - *Search for 22Na in novae supported by a novel method for measuring femtosecond nuclear lifetimes* (C. Fougères et al., arXiv preprint, https://doi.org/10.48550/arXiv.2212.06302)
-	
 
 /#################/
 
