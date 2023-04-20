@@ -11,11 +11,11 @@ int Extraction_SRIM_stopping_powers(Double_t IonEnergy[NUCLEI][MAX_LINES], Doubl
     
     string path = gSystem->pwd();
     
-    string fileSPbeam = path+"/SP_SRIM/beam_in_matter.dat";
-    string fileSPrecoil = path+"/SP_SRIM/recoil_in_matter.dat";
-    string fileSPejectil = path+"/SP_SRIM/ejectil_in_matter.dat";
-    string fileSPparticle = path+"/SP_SRIM/particle_in_matter.dat";
-    string fileSPparticle_si = path+"/SP_SRIM/particle_in_silicon.dat";
+    string fileSPbeam = path+"/src/functions/SP_SRIM/beam_in_matter.dat";
+    string fileSPrecoil = path+"/src/functions/SP_SRIM/recoil_in_matter.dat";
+    string fileSPejectil = path+"/src/functions//SP_SRIM/ejectil_in_matter.dat";
+    string fileSPparticle = path+"/src/functions//SP_SRIM/particle_in_matter.dat";
+    string fileSPparticle_si = path+"/src/functions//SP_SRIM/particle_in_silicon.dat";
     
     int LoadSRIMFile(string FileName, Double_t IonEnergy[MAX_LINES], Double_t dEdx_e[MAX_LINES], Double_t dEdx_n[MAX_LINES], int N_energy);
 

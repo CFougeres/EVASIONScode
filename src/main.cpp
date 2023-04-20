@@ -13,6 +13,7 @@
 #define NUCLEI_DECAY 2
 #define TARGET_PARAMETERS 4
 #define SPECTRO_PARAMETERS 5
+#define DECAY_SPECTRO_PARAMETERS 6
 
 using namespace std;
 
@@ -46,7 +47,7 @@ int main(int argc, char* argv[]){
         string path = gSystem->pwd();    cout<<path<<endl;
         
         //USER INPUTS
-        int extraction_inputs(string file, double Ebeam[2], Double_t MReaction[NUCLEI_REACTION], Double_t AZReaction[2][NUCLEI_REACTION], Double_t target_dim[TARGET_PARAMETERS], Double_t level_spectro[SPECTRO_PARAMETERS], Double_t  MDecay[NUCLEI_DECAY], Double_t decay_spectro[SPECTRO_PARAMETERS], Double_t AGATA_position[3], Double_t AGATA_angle[2], Double_t AGATA_resolution[2],Double_t AGATA_E_range_noise[2], double theta_VAMOS_max, Double_t SPIDER_geometry[3], Double_t SPIDER_resolution[3], double Loop_width[2][3]);
+        int extraction_inputs(string file, double Ebeam[2], Double_t MReaction[NUCLEI_REACTION], Double_t AZReaction[2][NUCLEI_REACTION], Double_t target_dim[TARGET_PARAMETERS], Double_t level_spectro[SPECTRO_PARAMETERS], Double_t  MDecay[NUCLEI_DECAY], Double_t decay_spectro[DECAY_SPECTRO_PARAMETERS], Double_t AGATA_position[3], Double_t AGATA_angle[2], Double_t AGATA_resolution[2],Double_t AGATA_E_range_noise[2], double theta_VAMOS_max, Double_t SPIDER_geometry[3], Double_t SPIDER_resolution[3], double Loop_width[2][3]);
         string path_input = path+"/inputs.dat";     cout<<path_input<<endl;
         string path_save = path+"/tree_results/";   cout<<path_save<<endl;
         
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]){
         Double_t target_dim[4]={0};
         Double_t level_spectro[5]={0};
         Double_t  MDecay[2]={0};
-        Double_t decay_spectro[5]={0};
+        Double_t decay_spectro[6]={0};
         Double_t AGATA_position[3]={0};         Double_t AGATA_resolution[2]={0};           Double_t AGATA_angle[2]={0};    Double_t AGATA_E_range_noise[2]={0};
         Double_t SPIDER_geometry[3]={0};        Double_t SPIDER_resolution[3]={0};
         double theta_VAMOS_max=0;
@@ -73,6 +74,7 @@ int main(int argc, char* argv[]){
         
         //DATA CONVERTED && SIMULATED
         double Beta_emission, Beta_reaction, DeltaBeta, Egamma_DS, Egamma_DC, theta_doppler;
+        double Ex_ejectile, Ex_particle;
         TTree* build_back_data_meas = new TTree("tree", "tree");
         TTree* build_back_data_sim[2];  build_back_data_sim[0]  = new TTree("tree", "tree");        build_back_data_sim[1]  = new TTree("tree", "tree");
         
@@ -85,7 +87,7 @@ int main(int argc, char* argv[]){
         }
         if(codeB==1){
             C_unbound_particle= new TCanvas("C_unbound_particle","C_unbound_particle",400,400);
-            unbound_particle_recoil_coincEx = new TH2F("unbound_particle_recoil_coincEx",";Ex^{VAMOS} (MeV); Ex^{SPIDER} (MeV)", NbinsEx,  Ex_range[0],Ex_range[1],NbinsEx,  Ex_range[0],Ex_range[1]);
+            unbound_particle_recoil_coincEx = new TH2F("unbound_particle_recoil_coincEx",";Ex(ejectile) (MeV); Ex(particle) (MeV)", NbinsEx,  Ex_range[0],Ex_range[1],NbinsEx,  Ex_range[0],Ex_range[1]);
         }
             
         int applied_sim_analysis;
@@ -133,22 +135,34 @@ int main(int argc, char* argv[]){
         }
         
         if(codeB==1){
-            applied_sim_analysis=CodeB_particle();
-            if(saving==1){
-                gSystem->cd(path_save.c_str());
-                TFile* outputFileExp = new TFile("dataExp.root", "RECREATE");
-                build_back_data_meas->Write();      outputFileExp->Close();
-                TFile* outputFileMC = new TFile("dataMC_events.root", "RECREATE");
-                build_back_data_sim[0]->Write();      outputFileMC->Close();
-                TFile* outputFileMCnoise = new TFile("dataMC_noise.root", "RECREATE");
-                build_back_data_sim[1]->Write();      outputFileMCnoise->Close();
+            //TREE EXPERIMENT
+            build_back_data_meas->Branch("Ex_ejectile", &Ex_ejectile,"Ex_ejectile/D");        build_back_data_meas->SetBranchAddress("Ex_ejectile", &Ex_ejectile);
+            build_back_data_meas->Branch("Ex_particle", &Ex_particle,"Ex_particle/D");        build_back_data_meas->SetBranchAddress("Ex_particle", &Ex_particle);
+            //TREE MC SIMULATION
+            build_back_data_sim[0]->Branch("Ex_ejectile", &Ex_ejectile,"Ex_ejectile/D");         build_back_data_sim[0]->SetBranchAddress("Ex_ejectile", &Ex_ejectile);
+            build_back_data_sim[0]->Branch("Ex_particle", &Ex_particle,"Ex_particle/D");         build_back_data_sim[0]->SetBranchAddress("Ex_particle", &Ex_particle);
+            if(extract_width==0){
+                applied_sim_analysis= CodeB_particle(chain,build_back_data_meas,  build_back_data_sim[0] , Ebeam,MReaction, AZReaction, MDecay, target_dim, level_spectro, decay_spectro, theta_VAMOS_max, SPIDER_geometry,extract_width);
+                if(saving==1){
+                    gSystem->cd(path_save.c_str());
+                    TFile* outputFileExp = new TFile("dataExp.root", "RECREATE");
+                    build_back_data_meas->Write();      outputFileExp->Close();
+                    TFile* outputFileMC = new TFile("dataMC_events.root", "RECREATE");
+                    build_back_data_sim[0]->Write();      outputFileMC->Close();
+                }
+                if(plotting==1){
+                    printf("Enter Ctrl+C to stop ...");
+                    C_unbound_particle->cd();
+                    gStyle->SetPalette(kThermometer);
+                    unbound_particle_recoil_coincEx->Draw("colz");unbound_particle_recoil_coincEx->GetXaxis()->CenterTitle();unbound_particle_recoil_coincEx->GetYaxis()->CenterTitle();
+                    theApp.Run();
+                }
             }
-            if(plotting==1){
-                printf("Enter Ctrl+C to stop ...");
-                C_unbound_particle->cd();
-                gStyle->SetPalette(kThermometer);
-                unbound_particle_recoil_coincEx->Draw("colz");unbound_particle_recoil_coincEx->GetXaxis()->CenterTitle();unbound_particle_recoil_coincEx->GetYaxis()->CenterTitle();
-                theApp.Run();
+            if(extract_width==1){
+                //quantification Ip & Igamma
+                if(plotting==1){
+                    printf("Enter Ctrl+C to stop ...");
+                }
             }
         }
         printf(" EVASIONS finished \n");
@@ -160,7 +174,7 @@ int main(int argc, char* argv[]){
 // Extraction function of user inputs in
 // inputs#.dat file
 //********************************************
-int extraction_inputs(string file, double Ebeam[2], Double_t MReaction[NUCLEI_REACTION], Double_t AZReaction[2][NUCLEI_REACTION], Double_t target_dim[TARGET_PARAMETERS], Double_t level_spectro[SPECTRO_PARAMETERS], Double_t  MDecay[NUCLEI_DECAY], Double_t decay_spectro[SPECTRO_PARAMETERS], Double_t AGATA_position[3], Double_t AGATA_angle[2], Double_t AGATA_resolution[2], Double_t AGATA_E_range_noise[2], double theta_VAMOS_max, Double_t SPIDER_geometry[3], Double_t SPIDER_resolution[3],double Loop_width[2][3]) {
+int extraction_inputs(string file, double Ebeam[2], Double_t MReaction[NUCLEI_REACTION], Double_t AZReaction[2][NUCLEI_REACTION], Double_t target_dim[TARGET_PARAMETERS], Double_t level_spectro[SPECTRO_PARAMETERS], Double_t  MDecay[NUCLEI_DECAY], Double_t decay_spectro[DECAY_SPECTRO_PARAMETERS], Double_t AGATA_position[3], Double_t AGATA_angle[2], Double_t AGATA_resolution[2], Double_t AGATA_E_range_noise[2], double theta_VAMOS_max, Double_t SPIDER_geometry[3], Double_t SPIDER_resolution[3],double Loop_width[2][3]) {
     double c = 3.0 * pow(10, 8); // speed velocity m.s-1
     double mu = 931.5; //MeV
     
@@ -171,7 +185,7 @@ int extraction_inputs(string file, double Ebeam[2], Double_t MReaction[NUCLEI_RE
     in.open(file.c_str());
     Int_t nlines = 0;
     while (1) {
-        if(nlines!=4 && nlines!=2 && nlines!=29 && nlines!=0 && nlines!=33 && nlines!=36){
+        if(nlines!=3 && nlines!=4 && nlines!=2 && nlines!=29 && nlines!=0 && nlines!=33 && nlines!=36){
             in >> index[nlines] >> variable[nlines] >>param[nlines];
             cout<<index[nlines]<<" "<<variable[nlines] <<" "<<param[nlines] <<endl;
         }
@@ -179,7 +193,7 @@ int extraction_inputs(string file, double Ebeam[2], Double_t MReaction[NUCLEI_RE
             in >> index[nlines] >> variable[nlines] >> param[nlines] >> param2[nlines] >>param3[nlines];
             cout<<index[nlines]<<" "<<variable[nlines] <<" "<<param[nlines] <<" "<<param2[nlines] <<" "<<param3[nlines] <<endl;
         }
-        if(nlines==0 || nlines ==33  || nlines ==36){
+        if(nlines==0 || nlines ==33 || nlines ==3  || nlines ==36){
             in >> index[nlines] >> variable[nlines] >> param[nlines] >> param2[nlines];
             cout<<index[nlines]<<" "<<variable[nlines] <<" "<<param[nlines]<<" "<<param2[nlines] <<endl;
         }
@@ -194,6 +208,7 @@ int extraction_inputs(string file, double Ebeam[2], Double_t MReaction[NUCLEI_RE
     MReaction[1] = param[13] *mu+param[15]; //reactif
     MReaction[2] = param[16] *mu+param[18]; //recoil
     MReaction[3] = param[19] *mu+param[21]; //ejectil
+
     
     AZReaction[0][0] = param[10] ; //beam
     AZReaction[0][1] = param[13] ; //reactif
@@ -219,6 +234,7 @@ int extraction_inputs(string file, double Ebeam[2], Double_t MReaction[NUCLEI_RE
     decay_spectro[2] = param[5]; //daughter Ex
     decay_spectro[3] = param[8]; //daughter spin
     decay_spectro[4] = param[9]; //Particle Momentum Transfered
+    decay_spectro[5] = param2[3]; //range_above_part_threshold
     MDecay[0] = param[22] *mu+param[24]; //particle
     MDecay[1] = param[25] *mu+param[27]; //daughter
 

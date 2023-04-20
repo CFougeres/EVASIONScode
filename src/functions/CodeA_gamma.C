@@ -7,13 +7,15 @@
 #define NUCLEI 5
 
 //************************************************
-//	 BLABLA
+//	 CodeA_gamma
+//   Analysis and simultion of gamma emissions
+//   Total width measurement based on velocity differentiel profiles
 // ***********************************************  
 
 int CodeA_gamma(TChain* data,  TTree* build_back_data_meas,   TTree* build_back_data_sim[2],  double Ebeam[2], Double_t MReaction[NUCLEI_REACTION], Double_t AZReaction[2][NUCLEI_REACTION], Double_t target_dim[TARGET_PARAMETERS], Double_t level_spectro[SPECTRO_PARAMETERS], Double_t AGATA_position[3], Double_t AGATA_angle[2], Double_t AGATA_resolution[2], Double_t AGATA_E_range_noise[2], double theta_VAMOS_max, int extract_width,  double Loop_width[2][3]){
     //SRIM
     Double_t IonEnergy[NUCLEI][MAX_LINES]; Double_t dEdx_e[NUCLEI][MAX_LINES] ; Double_t dEdx_n[NUCLEI][MAX_LINES];int Nfile_energy[NUCLEI];//sp keV/micron
-    int  SRIMextra = Extraction_SRIM_stopping_powers(IonEnergy, dEdx_e,  dEdx_n,Nfile_energy);
+    int  SRIMextra = Extraction_SRIM_stopping_powers(IonEnergy, dEdx_e,  dEdx_n, Nfile_energy);
     
     int extraction_dataExp(TChain* data, TTree* build_back_data, double Ebeam,  Double_t coin_Brho[2], double theta_VAMOS_max, double pol2Eloss[3], double betaRecoil_mean,  int  ERange_gamma[2], Double_t MReaction[NUCLEI_REACTION], Double_t AZReaction[2][NUCLEI_REACTION], Double_t level_spectro[SPECTRO_PARAMETERS],Double_t AGATA_position[3]);
     int ERange_gamma[2]={int(level_spectro[1]*1000-100),int(level_spectro[1]*1000+100)};
@@ -30,8 +32,6 @@ int CodeA_gamma(TChain* data,  TTree* build_back_data_meas,   TTree* build_back_
         int simNoise = MCsim_noise(data, build_back_data_sim[1], Ebeam[0], theta_VAMOS_max,  pol2Eloss, MReaction, AZReaction, AGATA_E_range_noise, AGATA_angle, AGATA_position, AGATA_resolution,  level_spectro);
         //Conversion from raw measurement
         int applied_extraction_dataExp=extraction_dataExp(data, build_back_data_meas, Ebeam[0], coin_Brho, theta_VAMOS_max,  pol2Eloss, betaRecoil_mean, ERange_gamma, MReaction, AZReaction, level_spectro,AGATA_position);
-        
-        
     }
     if(extract_width==1){
         //MC sim
